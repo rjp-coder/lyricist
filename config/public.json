@@ -1,0 +1,13 @@
+
+{
+  "skipExisting":true,
+  "puppeteer":{
+    "headless": false, 
+    "ignoreHTTPSErrors": true,
+    "args": ["--window-size=1200,800"]
+    },
+  "reedsy":{
+      "email":"insert@readsyemail.here",
+      "password":"readsyPassword"
+  }
+}
