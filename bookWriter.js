@@ -10,7 +10,7 @@ const log = require('./logger.js');
 function bookWriter() {
   //goto books
   let reedsy = "https://reedsy.com/#/books";
-  let reedsyLoginUrl = "https://auth.reedsy.com/sign_in/?ca_uuid=4dd1d443-f260-43b4-a26d-33bebfc9a8fe"
+  let reedsyLoginUrl = "https://auth.reedsy.com/sign_in/?"
   let reqTimeout = 120000;
 
   let bookTitle = "Song Book"; //FIXME if bookTitle is not new, program will append to the second newest book
@@ -45,14 +45,10 @@ function bookWriter() {
     await page.waitForFunction(`document.querySelector("body").innerText.includes("${bookTitle}")`);
     //grab new book
     console.log("waited for new elem, and it appeared.");
-    //let selector = `a[href*='books']:not(a[href*='settings'])`;
     html = await page.content();
     $ = await cheerio.load(html);
-    //get book links --TODO
-    //$('a').toArray().filter(function(a){return a.href.includes('books')})
-    //let newBook = getLatestBook($,bookTitle).next("div").find("a:contains('Write')");
     let newBook = $("a[href*='reedsy.com/books/']").first();
-    //get book links again, and work out the newbie --TODO
+    //get book links again, and work out the newbie
     let newBookUrl = newBook.attr('href');
     console.log("url for new book: ", newBookUrl);
     await page.goto(newBookUrl, { waitUntil: 'networkidle0', timeout: reqTimeout });
@@ -67,11 +63,10 @@ function bookWriter() {
     console.log("done");
     await publishBook(page, browser).catch(err => console.log(err));
     console.log("book published");
-
   }
 
   async function writeChapters(page, songList, chapterType) {
-    for (let i = 0; i < songList.length; i++) { //TODO add code to make sections. 
+    for (let i = 0; i < songList.length; i++) {
       let song = songList[i].title;
       let artist = songList[i].artist;
       let data = null;
@@ -101,7 +96,7 @@ function bookWriter() {
         if (!isLastChapter) {
           createChapter(page);
         }
-      } catch (err) { //N.B this will skip timeout errors //fixme
+      } catch (err) { 
         console.log(err);
         continue;
       }
@@ -169,8 +164,6 @@ function bookWriter() {
       await page.evaluate(({ chapterContent, chapterContentElem }) => {
         document.querySelector(chapterContentElem).innerText = chapterContent;
       }, { chapterContent, chapterContentElem });
-      //        await page.click(chapterContentElem); //FIXME problem is hre
-      //        await page.keyboard.type("...!.. ");
     } catch (err) { console.log("ERR!!", err); throw err; }
   }
 
@@ -206,7 +199,6 @@ function bookWriter() {
     try {
       await page.click("a[href*='export']");
       const newPage = await browser.linkToNewPage();
-      //await newPage.waitForNavigation({ waitUntil: 'networkidle0' });
       await newPage.waitForSelector("button[type='submit']");
       await newPage.click("button[type='submit']");
     } catch (err) {

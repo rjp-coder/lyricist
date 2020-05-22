@@ -14,7 +14,6 @@ function fileIO() {
           rows.push(row);
         })
         .on('end', () => {
-          //console.log('CSV file successfully processed');
           resolve(rows);
         });
     })

@@ -16,7 +16,6 @@ function lyricsSeeker() {
     log.setPath('./outputs/failedSongs_lyrics.log');
     const page = await browser.newPage();
     let failedWrites = [];
-    //url = encodeURI(url);
     for (let item of list) {
       let title = item.title;
       let artist = item.artist;
@@ -29,8 +28,6 @@ function lyricsSeeker() {
       let link = await getLinkForSong(fullTitleUrl, page);
       if (!link) {
         console.log("no links found for this song, skipping: ", fullTitle);
-        // let l = await getAllLinks(page);
-        // console.log("possible links: ", l.join("\n\t*"));
         failedWrites.push("Could not find song " + fullTitle);
         continue;
       }

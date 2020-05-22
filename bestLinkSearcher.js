@@ -1,10 +1,6 @@
 const filledStarColour = "#FF5D55";
 
-const test = 0; //0=backend webscrape 1=front end test;
-var u = require('util'); //purely for inspecting the dom
-const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
-//const $ = require('./jq3.4.1.min.js');
 
 function bestLinkSearcher() {
 
@@ -16,16 +12,19 @@ function bestLinkSearcher() {
         headElement = $("body>div");
       }
       var arr = $(headElement).children().toArray();
-      arr.shift(); //remove header div
+      //remove header div
+      arr.shift(); 
       if (arr.length < 3) console.log((arr[0]));
       console.log("Number of children of root elem passed in", " ", arr.length);
-      let tabs = arr.filter(function (e, i) {
-        let isArtist = true; //you could use the index for this , but what are the odds of same song different artist??
+      let tabs = arr.filter(function (e) {
+        //for now, assumed that its not possible for two artists to make the same song.
+        let isArtist = true; 
         let children = $(e).children();
+        //identify tabs that are just guitar solos
         let isSolo = ~$(children[1]).text().toLowerCase().indexOf("solo");
         let isTab = $(children[3]).text().toLowerCase() == type; //cheerio
         let hasRating = $(children[2]).find("div span").length > 0;
-        return isArtist && isTab && hasRating && !isSolo; //exclude tabs that are just guitar solos
+        return isArtist && isTab && hasRating && !isSolo; 
 
       });
       let sortedTabs = tabs.sort(function (a, b) {
@@ -59,7 +58,7 @@ function bestLinkSearcher() {
     let $=cheerio;
     let data = $($(listItem).children()[2]).children().children();
     let stars = countStars($,$($(data).first().children()).toArray());
-    let votes = data[1].children[0].data //cheerio
+    let votes = data[1].children[0].data;
     let score = Math.pow(stars, 3) * +votes;
     return score;
   }
