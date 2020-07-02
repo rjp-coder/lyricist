@@ -14,11 +14,11 @@ Given a csv file of songs, lyricist will search for guitar tablature on ultimate
 
 Provide your songlist.csv file in the format 
 
-songname,artist
-songname,artist
+songname,artist\
+songname,artist\
 ... 
 
-You will need a Reedsy account set up to do online e-book publishing, and to edit the config/public.json "Reesy" section to contain your Reedsy username and password. 
+You will need a Reedsy account set up to do online e-book publishing, and to edit the config/public.json "Reedsy" section to contain your Reedsy username and password. 
 
 ## Output
 
