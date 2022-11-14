@@ -1,14 +1,9 @@
 function lyricScraper() {
 
-  const $ = require('cheerio');
-
-  function scrapeTitle(rootElem) {
-    let elem = $(rootElem).find("h1");
-    return elem.text();
-  }
-
   function scrapeWords(rootElem) {
-    let e = $(rootElem).find("section>p");
+    console.log("Scraping words");
+    console.log(rootElem);
+    let e = (rootElem).find("[class*='Lyrics__Container']");
     let h = e.html();
     let s = h.replace(/<br>/gi, '<p>LINEBREAK</p>');
     console.log("REPLACEY STUFF");
@@ -19,7 +14,7 @@ function lyricScraper() {
   }
 
   function scrape(rootElem) {
-    return scrapeTitle(rootElem) + "\n" + scrapeWords(rootElem);
+    return scrapeWords(rootElem);
   }
 
   return { scrape }
