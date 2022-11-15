@@ -4,6 +4,7 @@ const judge = require('./bestLinkSearcher.js');
 const scrape = require('./tabScraper.js');
 const io = require('./fileIO.js');
 const config = require('./config/default.json');
+const utils = require('./utils.js');
 
 const reqTime = 30000;
 
@@ -33,7 +34,7 @@ function tabSeeker() {
         await go(url + fullSong, page);
         console.log("Reached " + url + fullSongUrl);
         let fail = false;
-        await page.waitFor("section article div").catch(err => { console.log(err), fail = true; })
+        await page.waitForTimeout("section article div").catch(err => { console.log(err), fail = true; })
         if (fail) { failedWrites.push("There were no results at all for:" + fullSong); continue };
         let html = await page.content();
         let $ = await cheerio.load(html);
@@ -50,8 +51,8 @@ function tabSeeker() {
         console.log("Navigating to link ...");
         await go(link, page);
         console.log("Reached " + link);
-        await page.waitFor("code").catch((error) => { console.error(error) });
-        await page.waitFor("pre").catch((error) => { console.error(error) });
+        await page.waitForTimeout("code").catch((error) => { console.error(error) });
+        await page.waitForTimeout("pre").catch((error) => { console.error(error) });
         html = await page.content();
         $ = await cheerio.load(html);
         console.log("ARR LEN: ", $("article").toArray().length);
@@ -76,7 +77,7 @@ function tabSeeker() {
         tab = tab.replace(/\n/g, "\r\n"); //windows friendly
         console.log("OUT:" + tab.slice(0, 200));
         let fname = convertToFilename(fullSong, tabType);
-        await io.write(fname, tab);
+        await io.write(utils.getPathToSongs()+fname, tab);
       }
       if (typoMap.size > originalTypoMapSize)
         io.writeCsv('./outputs/corrections.csv');

@@ -2,7 +2,7 @@ function lyricScraper() {
 
   function scrapeWords(rootElem) {
     console.log("Scraping words");
-    console.log(rootElem);
+    //console.log(rootElem);
     let e = (rootElem).find("[class*='Lyrics__Container']");
     let h = e.html();
     let s = h.replace(/<br>/gi, '<p>LINEBREAK</p>');

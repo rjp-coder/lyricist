@@ -3,6 +3,8 @@ const cheerio = require('cheerio');
 const scraper = require('./lyricScraper.js');
 const config = require('./config/default.json');
 const io = require('./fileIO.js');
+const utils = require('./utils.js');
+const { getFilenameFromSongArtistAndType } = require('./utils.js');
 
 
 let url = 'https://genius.com/search?q=';
@@ -18,9 +20,8 @@ function lyricsSeeker() {
     let failedWrites = [];
     for (let item of list) {
       let {title,artist} = item;
-      let songName = (artist + "-" + title+"-lyrics").trim().replace(/ /g,"-");
-      let fullUrl = "https://genius.com/"+songName;
-      if (config.skipExisting && await io.fileExists(convertToFilename(songName))) {
+      let fullUrl =  utils.getGeniusUrlFromSongAndArtist(title,artist);;
+      if (config.skipExisting && await io.fileExists(utils.getPathToSongs()+utils.getFilenameFromSongArtistAndType(title,artist,"lyrics"))) {
         console.log("song ", convertToFilename(item.title), "already exists! Skipping");
         continue;
       }
@@ -33,8 +34,8 @@ function lyricsSeeker() {
       let words = title+":\n\n" + scraper.scrape($('body'));
       console.log("***\nLYRICS:" + words.slice(0, 150) + "...\n***");
       words = words.replace(/\n/g, "\r\n"); //make line breaks windows friendly
-      let fname = convertToFilename(songName);
-      await io.write(fname, words);
+      let fname = getFilenameFromSongArtistAndType(title,artist,"lyrics");
+      await io.write(utils.getPathToSongs()+fname, words);
       console.log("NEXT SONG");
     }
     if (failedWrites.length)

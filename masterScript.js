@@ -18,7 +18,7 @@ const io = require('./fileIO.js');
 
   async function parallel() {
     const task1 = lyricsSeeker.get(list);
-    const task2 = tabSeeker.get(list);
+    const task2 = ()=>{return}//tabSeeker.get(list);
 
     return {
       result1: await task1,

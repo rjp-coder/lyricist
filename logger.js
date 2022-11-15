@@ -14,6 +14,9 @@ function logger() {
   }
 
   function log(str) {
+    if (str instanceof Error){
+      str=str.toString();
+    }
     console.log(str);
     if (_path)
       io.write(_path, str);

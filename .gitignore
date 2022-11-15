@@ -1,3 +1,5 @@
 node_modules
 outputs/lyrics/*
 default.json
+songlist.csv
+oldSonglist.csv

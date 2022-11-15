@@ -3,14 +3,27 @@ const cheerio = require('cheerio');
 const read = require('./fileIO.js');
 const config = require('./config/default.json');
 const log = require('./logger.js');
+const utils = require('./utils');
+
+const delay = (f,ms) => console.log("Not delaying");//(f,ms) => new Promise(res => setTimeout(()=>{f();return res}, ms));
+const clickAndWaitForNavigation =  async function(page, selector){
+  console.assert(page && selector);
+  const res = await Promise.all([
+    page.waitForNavigation(),
+    page.click(selector),
+  ]);
+
+  return res
+}
+  
 
 //Ensure logged in
-
+const NOT_SAVING = `document.querySelectorAll(".saving_indicator.saving").length==0`
 
 function bookWriter() {
   //goto books
   let reedsy = "https://reedsy.com/#/books";
-  let reedsyLoginUrl = "https://auth.reedsy.com/sign_in/?"
+  let reedsyLoginUrl = "https://auth.reedsy.com/sign_in/?ca_name=Editor"
   let reqTimeout = 120000;
 
   let bookTitle = "Song Book"; //FIXME if bookTitle is not new, program will append to the second newest book
@@ -32,13 +45,26 @@ function bookWriter() {
     try {
       await logIn(page);
     } catch (err) { log.log(err); console.log("Could not log in. aborting program"); return; }
-    console.log("logged in. Now going to Books");
-    url = reedsy;
+    console.log("logged in.");
+   console.log("Awaiting a redirect from website in case already logged in");
+   //check for a redirect from the website
+   const REDIRECT_BUTTON = "[href='https://reedsy.com/auth/one_tap_sign_in']";
+   try {
+     
+     await page.waitForSelector(REDIRECT_BUTTON,{timeout:10000});
+     console.log("Was redirected, clicking website's 'continue' button.");
+     await page.click(REDIRECT_BUTTON)
+     
+    } catch (timeoutErr){
+      console.log("There was no redirect")
+    }
+   url = reedsy;
+    console.log("Now going to books.")
     await page.goto(url, { waitUntil: 'load', timeout: reqTimeout });
     console.log("Gone to books");
     html = await page.content();
     let $ = cheerio.load(html);
-    $("a[href*='reedsy.com/books/']").length;
+    //$("a[href*='reedsy.com/books/']").length;
     await submitNewBookTitle(bookTitle, page);
     console.log("submitted new bookTitle");
     //wait for new book to appear 
@@ -47,12 +73,16 @@ function bookWriter() {
     console.log("waited for new elem, and it appeared.");
     html = await page.content();
     $ = await cheerio.load(html);
-    let newBook = $("a[href*='reedsy.com/books/']").first();
-    //get book links again, and work out the newbie
-    let newBookUrl = newBook.attr('href');
-    console.log("url for new book: ", newBookUrl);
-    await page.goto(newBookUrl, { waitUntil: 'networkidle0', timeout: reqTimeout });
-    console.log("Reached " + newBookUrl);
+    let newBookSelector = '[ng-click="bookService.openBook(book)"]';
+
+    /*according to puppeteer docs, this is the correct pattern for clicking and waiting for navigation*/
+    // const [response] = await Promise.all([
+    //   page.waitForNavigation(),
+    //   page.click(newBookSelector),
+    // ]);
+    await clickAndWaitForNavigation(page,newBookSelector);
+    console.log("Clicked on new book ");
+    await page.content();
     await writePart(page, "LYRICS");
     await goToFirstChapter(page);
     await writeChapters(page, songList, "LYRICS");
@@ -69,29 +99,28 @@ function bookWriter() {
     for (let i = 0; i < songList.length; i++) {
       let song = songList[i].title;
       let artist = songList[i].artist;
+      let type = chapterType == "LYRICS" ? "lyrics" : config.tabType || "chords";
       let data = null;
       try {
-        let fname = null;
-        if (chapterType == "LYRICS") fname = "./lyrics/" + song + " " + artist + "_lyrics.txt";
-        if (chapterType == "TAB") fname = "./tabs/" + song + " " + artist + "_tab.txt"
+        let fname = utils.getPathToSongs()+utils.getFilenameFromSongArtistAndType(song,artist,type)
         data = await read.read(fname);
         console.log("loaded song");
       } catch (err) {
-        log.log("Problem writing " + song);
+        log.log("Problem loading " + song);
         log.log(err);
         continue;
       }
       try {
-        let html = await page.content();
-        let $ = await cheerio.load(html);
-        await page.waitForSelector("span.saved");
+        //let html = await page.content();
+        //let $ = await cheerio.load(html);
+        await page.waitForFunction(NOT_SAVING);
         console.log("Inserting title ", titleCase(song));
         await insertChapterTitle(titleCase(song), page);
         console.log("Inserting chapter contents");
-        await page.waitForSelector("span.saved");
+        await page.waitForFunction(NOT_SAVING);
         await insertChapterContents(data, page);
-        await page.waitForSelector("span.saved")
-        await page.waitFor(3000);
+        await page.waitForTimeout(3000);
+        await page.waitForFunction(NOT_SAVING)
         let isLastChapter = i == songList.length - 1;
         if (!isLastChapter) {
           createChapter(page);
@@ -105,26 +134,31 @@ function bookWriter() {
   }
 
   async function createChapter(page){
-    await page.click("a.create-chapter");
-    await page.waitForFunction(`document.querySelectorAll(".menu-group-body")[1].innerText.includes("Chapter")`);
-    await page.waitFor(3000);
+    const CREATE_CHAPTER = "[test='add-chapter']";
+    const CHAPTER_NAME_INPUT = '[data-placeholder^="Chapter"] p';
+    await page.click(CREATE_CHAPTER);
+    await page.waitForSelector(CHAPTER_NAME_INPUT);
+    await page.waitForTimeout(3000);
   }
 
   async function goToFirstChapter(page) {
-    await page.click("li.level-2");
-    await page.waitForNavigation();
+    // await page.click("[href*=chapter]");
+    // await page.waitForNavigation();
+    await clickAndWaitForNavigation(page,'[href*=chapter]');
   }
 
   async function writePart(page, part) {
     console.log(129);
-    await page.waitForSelector("a[ng-click='createPart()']");
+    const CREATE_PART_BUTTON = "[test='add-part']";
+    const PART_NAME_INPUT = '[data-placeholder^="Part"] p';
+    console.log(129.5)
+    await page.waitForSelector(CREATE_PART_BUTTON);
     console.log(130);
-    await page.click("a[ng-click='createPart()']");
-    await page.waitForSelector("input[placeholder^='Part'");
-    await page.click("input[placeholder^='Part'");
+    await page.click(CREATE_PART_BUTTON);
+    await page.waitForSelector(PART_NAME_INPUT);
+    await page.click(PART_NAME_INPUT);
     await page.keyboard.type(part);
-    await page.waitFor(500);
-    await page.waitForSelector("span.saved");
+    await page.waitForFunction(NOT_SAVING);
   }
 
   async function logIn(page) {
@@ -147,8 +181,8 @@ function bookWriter() {
   //wait for page load
   async function insertChapterTitle(chapterTitle, page) {
     try {
-      let chapterElem = '[placeholder^="Chapter"]';
-      await page.waitFor(200);
+      let chapterElem = '[data-placeholder^="Chapter"] p';
+      await page.waitForTimeout(200);
       await page.waitForSelector(chapterElem);
       await page.click(chapterElem)
       await page.keyboard.type(chapterTitle);
@@ -197,7 +231,7 @@ function bookWriter() {
 
   async function publishBook(page, browser) {
     try {
-      await page.click("a[href*='export']");
+      await page.click('.export-widget');
       const newPage = await browser.linkToNewPage();
       await newPage.waitForSelector("button[type='submit']");
       await newPage.click("button[type='submit']");
