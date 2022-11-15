@@ -1,5 +1,6 @@
 node_modules
 outputs/lyrics/*
+package-lock.json
 default.json
 songlist.csv
 oldSonglist.csv
