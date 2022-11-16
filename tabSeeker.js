@@ -26,8 +26,8 @@ function tabSeeker() {
       for (let item of list) {
         let fullSong = item.title + " " + item.artist;
         let fullSongUrl = encodeURI(fullSong);
-        if (SKIP_EXISTING_SONGS && await io.fileExists(convertToFilename(fullSong, tabType))) {
-          console.log("song ", convertToFilename(fullSong, tabType), "already exists! Skipping");
+        if (SKIP_EXISTING_SONGS && await io.fileExists(utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType))) {
+          console.log("song ", utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType), "already exists! Skipping");
           continue;
         }
         console.log("Navigating to " + url + fullSongUrl);
@@ -39,8 +39,8 @@ function tabSeeker() {
         let html = await page.content();
         let $ = await cheerio.load(html);
         console.log("about to get link for tab");
-        let rootElement = $("section article div");
-        let link = await judge.getBestLink(rootElement, html, tabType);
+        let rootElement = "section article div";
+        let link = await judge.getBestLink(rootElement, page, tabType);
         console.log("finding best link for " + fullSong + " with type " + tabType);
         if (!link) {
           let msg = "No link found for " + fullSong + " of type " + tabType + ". skipped song.";
@@ -49,26 +49,31 @@ function tabSeeker() {
           continue;
         }
         console.log("Navigating to link ...");
-        await go(link, page);
+        await go(link, page,null,{waitUntil:"networkidle2"});
         console.log("Reached " + link);
         await page.waitForTimeout("code").catch((error) => { console.error(error) });
         await page.waitForTimeout("pre").catch((error) => { console.error(error) });
-        html = await page.content();
+        html = await page.content();        
         $ = await cheerio.load(html);
         console.log("ARR LEN: ", $("article").toArray().length);
-        let infoElem = scrape.getRootElem($, fullSong);
-        let newSongTitle = scrape.getTitle($(infoElem), fullSong);
+        let infoElem = scrape.getRootElem($, item.title);
+        console.log("infoElem");
+        console.log(infoElem);
+        let newSongTitle = scrape.getTitle($(infoElem), item.title);
         if (!newSongTitle) {
           console.error("could not get actual title of misspelled song");
-          newSongTitle = fullSong;
-        } else {
-          newSongTitle = newSongTitle + item.artist;
-          if (newSongTitle && (newSongTitle.toLowerCase() !== fullSong)) {
-            typoMap = handleTypoSong(typoMap, fullSong, newSongTitle);
-            fullSong = newSongTitle; // use the corrected song name for file write.
-          }
+          newSongTitle = fullSong;}
+        // } else {
+        //   newSongTitle = newSongTitle + item.artist;
+        //   if (newSongTitle && (newSongTitle.toLowerCase() !== fullSong)) {
+        //     typoMap = handleTypoSong(typoMap, fullSong, newSongTitle);
+        //     fullSong = newSongTitle; // use the corrected song name for file write.
+        //   }
+        // }
+        if (infoElem.length > 1) {
+          console.warn("There is more than one element containing the song title! Selecting the first one.");
+          infoElem = [...infoElem][0];
         }
-        if (infoElem.length > 1) console.error("There is more than one element containing the song title!");
         if (infoElem.length == 0) {
           console.error("There is no element containing the song title!");
           failedWrites.push(newSongTitle + " could not be found on the website.");
@@ -76,7 +81,7 @@ function tabSeeker() {
         let tab = scrape.scrape($(infoElem), fullSong);
         tab = tab.replace(/\n/g, "\r\n"); //windows friendly
         console.log("OUT:" + tab.slice(0, 200));
-        let fname = convertToFilename(fullSong, tabType);
+        let fname = utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType);
         await io.write(utils.getPathToSongs()+fname, tab);
       }
       if (typoMap.size > originalTypoMapSize)
@@ -96,10 +101,6 @@ function tabSeeker() {
   //OPTIONAL add small info for the foreword, and part paragraphs.
   //OPTIONAL investigate refactoring for the access readsy book and the lyric scraper. 
 
-  function convertToFilename(name, tabType) {
-    return "./tabs/" + name + "_" + tabType + ".txt";
-  }
-
   function handleTypoSong(typoMap, typoSong, realSong) {
     console.log("Wrong song is " + typoSong);
     console.log("Right song is " + realSong);
@@ -107,11 +108,11 @@ function tabSeeker() {
     return typoMap;
   }
 
-  async function go(url, page, count = 1) {
+  async function go(url, page, count = 1,options) {
     console.log("GO! (" + count + "): ", url);
     if (count == 2) { console.log("giving up, could not load page"); return page; }
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: reqTime });
+      await page.goto(url, options || { waitUntil: 'domcontentloaded', timeout: reqTime });
       return page;
     } catch (err) {
       console.log(err.name);

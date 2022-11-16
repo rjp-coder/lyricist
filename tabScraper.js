@@ -1,13 +1,12 @@
 function tabScraper() {
-  const $ = require('cheerio');
 
   function getTitle(rootElem, songTitle) {
-    let elem = (rootElem).find("span,div,p,h1,h2,h3,h4").filter(a => ~$(a).text().toLowerCase().indexOf(songTitle.toLowerCase().substr(0, 5)));
+    let elem = (rootElem).find("span,div,p,h1,h2,h3,h4").filter(a => ~((a).textContent || "").toLowerCase().indexOf(songTitle.toLowerCase().substr(0, 5)));
     return elem.text();
   }
 
   function getTuning(rootElem) {
-    let elem = (rootElem).find("span,div,p,h1,h2,h3,h4").filter(a => ~$(a).text().toLowerCase().indexOf("tuning"));
+    let elem = (rootElem).find("span,div,p,h1,h2,h3,h4").filter(a => ~((a).textContent || "").toLowerCase().indexOf("tuning"));
     return elem.text();
   }
 
@@ -16,13 +15,13 @@ function tabScraper() {
     return elem.text();
   }
 
-  function getRootElem($, fullSong) {
-    console.log("fullSong is ", fullSong);
-    console.log("article is: ", $("article").length);
+  function getRootElem($, song) {
+    console.log("title is "+song);
+    console.log($("article").toArray().length);
     let infoElem = $("article").toArray().filter(function (a) {
       let text = $(a).text().toLowerCase();
-      let fullSongLowerCase = fullSong.substr(0, 5).toLowerCase();
-      let index = text.indexOf(fullSongLowerCase);
+      let songLowerCase = song.substr(0, 5).toLowerCase();
+      let index = text.indexOf(songLowerCase);
       return ~index;
     });
     return infoElem;

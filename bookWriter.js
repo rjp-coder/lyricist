@@ -5,7 +5,6 @@ const config = require('./config/default.json');
 const log = require('./logger.js');
 const utils = require('./utils');
 
-const delay = (f,ms) => console.log("Not delaying");//(f,ms) => new Promise(res => setTimeout(()=>{f();return res}, ms));
 const clickAndWaitForNavigation =  async function(page, selector){
   console.assert(page && selector);
   const res = await Promise.all([
