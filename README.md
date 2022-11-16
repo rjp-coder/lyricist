@@ -1,14 +1,18 @@
 # Lyricist 
 
-This project aims to show what can be accomplished with the latest ECMA script, Node.js and Puppeteer. It uses the revealing module design pattern.
+This project aims to show what can be accomplished with modern ECMA script, Node.js, and Puppeteer/cheerio. It uses the revealing module design pattern.
 
 ## Get started
 
-Clone the project and edit the config/public.json to include your Reesy account details (create one if you don't have one), and edit the songlist.csv to be the songs you prefer. 
+Clone the project and copy the config/public.json to make a config/default.json. It should include Reedsy account details. (Set up a reedsy account if you don't have one).
+
+Edit the songlist.csv to be the songs you prefer. 
+
+To run the project first <code>npm install<code> the dependencies, then run the command <code><node main.js></code>
 
 ## Process
 
-Given a csv file of songs, lyricist will search for guitar tablature on ultimate-guitar.com and save the resulting tab to a text file. It will, in parallel, search the lyrics site Genius for the same song, and save the lyrics in another text file. After all songs are saved as text files (songs that could not be found are skipped), lyricist will open up Reedsy, log in and compose an e-book, using the contents of text files. This is then sent to the email address associated with the Reedsy account. 
+Given a csv file of songs, lyricist will search for guitar tablature on ultimate-guitar.com and save the resulting tab to a text file. It will, in parallel, search the lyrics site Genius for the same song, and save the lyrics in another text file. After all songs are saved as text files (songs that could not be found are skipped), lyricist will open up Reedsy, log in and compose an e-book using the contents of text files. This is then sent to the email address associated with the Reedsy account. 
 
 ## Inputs
 
@@ -32,4 +36,8 @@ As this is a webscraper, any changes to the websites it uses may break its funct
 
 ## Legal
 
-This program is for demonstration of programming languages and personal use only. You should be able to use it for yourself legally but check the legislation in your country to be sure. It should not be used for financial gain unless with express agreement from all relevant parties including the orginal artists/owner of material, the uploader of the content, and the platforms hosting the content. 
+This program is for demonstration of programming languages and personal use only. You should check the relevant legislation in your country to be sure you can use it. The program is not to be used for profit except with express agreement from all relevant parties including the orginal artists/owner of material, the uploader of the content, and the platforms hosting the content.
+
+You may use, modify, or redistribute this program however you like, so long as you do not charge money for reselling. 
+
+If you wish to use this program for profit then you can ask for permission via a github PR.
