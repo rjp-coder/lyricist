@@ -8,7 +8,7 @@ Clone the project and copy the config/public.json to make a config/default.json.
 
 Edit the songlist.csv to be the songs you prefer. 
 
-To run the project first <code>npm install</code> the dependencies, then run the command <code><node main.js></code>
+To run the project first <code>npm install</code> the dependencies, then run the command <code>node main.js></code>
 
 ## Process
 
