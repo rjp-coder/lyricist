@@ -14,11 +14,13 @@ const io = require('./fileIO.js');
     if (!item.hasOwnProperty("artist")) {
       item.artist = "";
     }
+    item.title=item.title.trim();
+    item.artist = item.artist.trim();
   }
 
   async function parallel() {
     const task1 = lyricsSeeker.get(list);
-    const task2 = ()=>{return}//tabSeeker.get(list);
+    const task2 = tabSeeker.get(list);
 
     return {
       result1: await task1,
