@@ -26,8 +26,9 @@ function tabSeeker() {
       for (let item of list) {
         let fullSong = item.title + " " + item.artist;
         let fullSongUrl = encodeURI(fullSong);
-        if (SKIP_EXISTING_SONGS && await io.fileExists(utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType))) {
-          console.log("song ", utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType), "already exists! Skipping");
+        let fullPath = utils.getPathToSongs()+utils.getFilenameFromSongArtistAndType(item.title,item.artist,tabType);
+        if (config.skipExisting && await io.fileExists(fullPath)) {
+          console.log("song ", fullPath, "already exists! Skipping");
           continue;
         }
         console.log("Navigating to " + url + fullSongUrl);
