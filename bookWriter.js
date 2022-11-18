@@ -25,7 +25,7 @@ function bookWriter() {
   let reedsyLoginUrl = "https://auth.reedsy.com/sign_in/?ca_name=Editor"
   let reqTimeout = 120000;
 
-  let bookTitle = "Song Book"; //FIXME if bookTitle is not new, program will append to the second newest book
+  let bookTitle = config.bookTitle || "Song Book"; //FIXME if bookTitle is not new, program will append to the second newest book
 
 
   async function writeBook(songList) {
