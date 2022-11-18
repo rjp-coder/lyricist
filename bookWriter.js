@@ -14,6 +14,16 @@ const clickAndWaitForNavigation =  async function(page, selector){
 
   return res
 }
+
+async function sayYesToAllDialogs(page) {
+  page.on( 'dialog', async dialog => {
+      console.log( dialog.type() );
+      console.log( dialog.message() );
+      await page.waitForTimeout(3000);
+      await dialog.accept( "" );
+      await page.waitForTimeout(3000);
+  } );
+}
   
 
 //Ensure logged in
@@ -57,7 +67,7 @@ function bookWriter() {
     } catch (timeoutErr){
       console.log("There was no redirect")
     }
-   url = reedsy;
+    url = reedsy;
     console.log("Now going to books.")
     await page.goto(url, { waitUntil: 'load', timeout: reqTimeout });
     console.log("Gone to books");
@@ -69,25 +79,21 @@ function bookWriter() {
     //wait for new book to appear 
     await page.waitForFunction(`document.querySelector("body").innerText.includes("${bookTitle}")`);
     //grab new book
-    console.log("waited for new elem, and it appeared.");
+    console.log("waited for the new book to appear on screen, and it appeared.");
     html = await page.content();
     $ = await cheerio.load(html);
     let newBookSelector = '[ng-click="bookService.openBook(book)"]';
-
-    /*according to puppeteer docs, this is the correct pattern for clicking and waiting for navigation*/
-    // const [response] = await Promise.all([
-    //   page.waitForNavigation(),
-    //   page.click(newBookSelector),
-    // ]);
+    await page.waitForTimeout(2000); //avoid alert popping up saying "Are you sure you want to navigate away"
     await clickAndWaitForNavigation(page,newBookSelector);
     console.log("Clicked on new book ");
     await page.content();
+    await sayYesToAllDialogs(page); //click yes to any dialogs that pop up;
     await writePart(page, "LYRICS");
-    await goToFirstChapter(page);
+    await goToFirstChapter(page); //because the book auto inserts the first chapter, you do not want to create a chapter here. 
     await writeChapters(page, songList, "LYRICS");
     console.log("finished writing lyrics, now writing tabs");
     await writePart(page, "TABS");
-    createChapter(page);
+    await createChapter(page);
     await writeChapters(page, songList, "TAB");
     console.log("done");
     await publishBook(page, browser).catch(err => console.log(err));
@@ -114,21 +120,33 @@ function bookWriter() {
         //let $ = await cheerio.load(html);
         await page.waitForFunction(NOT_SAVING);
         console.log("Inserting title ", titleCase(song));
-        await insertChapterTitle(titleCase(song), page);
+        try{
+          await insertChapterTitle(titleCase(song), page);
+        } catch (err){
+          console.log("Failed to insert chapter title. Moving to next song");
+          continue;
+        }
         console.log("Inserting chapter contents");
         await page.waitForFunction(NOT_SAVING);
-        await insertChapterContents(data, page);
-        await page.waitForTimeout(3000);
-        await page.waitForFunction(NOT_SAVING)
+        try{
+          await insertChapterContents(data, page);
+          await page.waitForTimeout(1000);
+          await page.waitForFunction(NOT_SAVING)
+          await page.waitForTimeout(config.waitTimeBetweenChapters || 2000);
+        } catch (err){
+          console.log("Failed to insert chapter contents. Moving on to next song");
+          continue;
+        }
         let isLastChapter = i == songList.length - 1;
         if (!isLastChapter) {
-          createChapter(page);
+          console.log("inserting new chapter");
+          await createChapter(page);
         }
       } catch (err) { 
         console.log(err);
         continue;
       }
-      console.log("next book");
+      console.log("getting next song");
     }
   }
 
@@ -137,7 +155,7 @@ function bookWriter() {
     const CHAPTER_NAME_INPUT = '[data-placeholder^="Chapter"] p';
     await page.click(CREATE_CHAPTER);
     await page.waitForSelector(CHAPTER_NAME_INPUT);
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
   }
 
   async function goToFirstChapter(page) {
@@ -181,10 +199,19 @@ function bookWriter() {
   async function insertChapterTitle(chapterTitle, page) {
     try {
       let chapterElem = '[data-placeholder^="Chapter"] p';
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(3000);
       await page.waitForSelector(chapterElem);
-      await page.click(chapterElem)
-      await page.keyboard.type(chapterTitle);
+      console.log("Chapter Elem selector is " + chapterElem);
+      await page.evaluate(({ chapterTitle, chapterElem }) => {
+        console.log("About to set the chapter title:");
+        document.querySelector(chapterElem).innerText = chapterTitle;
+      }, { chapterTitle, chapterElem });      
+      console.log("Chapter title has been set");
+      await page.waitForFunction(
+        `document.querySelector('${chapterElem}').innerText.includes('${chapterTitle}')`,
+        {},
+        chapterElem,chapterTitle);
+      console.log("...and verified as matching the title of the song");
     } catch (err) {
       throw err;
     }
@@ -192,11 +219,14 @@ function bookWriter() {
 
   async function insertChapterContents(chapterContent, page) {
     try {
-      let chapterContentElem = "div.ql-editor";
+      let chapterContentElem = "div.ql-editor.ql-blank";
       await page.waitForSelector(chapterContentElem);
+      console.log("Running eval on page");
       await page.evaluate(({ chapterContent, chapterContentElem }) => {
+        console.log("About to set the chapter contents:");
         document.querySelector(chapterContentElem).innerText = chapterContent;
       }, { chapterContent, chapterContentElem });
+      console.log("Eval done. Verifying contents");
     } catch (err) { console.log("ERR!!", err); throw err; }
   }
 
