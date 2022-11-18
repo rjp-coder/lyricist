@@ -20,7 +20,7 @@ function tabScraper() {
     console.log($("article").toArray().length);
     let infoElem = $("article").toArray().filter(function (a) {
       let text = $(a).text().toLowerCase();
-      let songLowerCase = song.substr(0, 5).toLowerCase();
+      let songLowerCase = song.substr(0, 15).toLowerCase();
       let index = text.indexOf(songLowerCase);
       return ~index;
     });
