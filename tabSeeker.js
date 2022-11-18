@@ -58,8 +58,8 @@ function tabSeeker() {
         $ = await cheerio.load(html);
         console.log("ARR LEN: ", $("article").toArray().length);
         let infoElem = scrape.getRootElem($, item.title);
-        console.log("infoElem");
-        console.log(infoElem);
+        // console.log("infoElem");
+        // console.log(infoElem);
         let newSongTitle = scrape.getTitle($(infoElem), item.title);
         if (!newSongTitle) {
           console.error("could not get actual title of misspelled song");
