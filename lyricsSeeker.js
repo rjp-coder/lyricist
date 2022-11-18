@@ -20,9 +20,10 @@ function lyricsSeeker() {
     let failedWrites = [];
     for (let item of list) {
       let {title,artist} = item;
-      let fullUrl =  utils.getGeniusUrlFromSongAndArtist(title,artist);;
-      if (config.skipExisting && await io.fileExists(utils.getPathToSongs()+utils.getFilenameFromSongArtistAndType(title,artist,"lyrics"))) {
-        console.log("song ", convertToFilename(item.title), "already exists! Skipping");
+      let fullUrl =  utils.getGeniusUrlFromSongAndArtist(title,artist);
+      let fullPath = utils.getPathToSongs()+utils.getFilenameFromSongArtistAndType(title,artist,"lyrics");
+      if (config.skipExisting && await io.fileExists(fullPath)) {
+        console.log("song ", fullPath, "already exists! Skipping");
         continue;
       }
       await go(fullUrl, page).catch(err => console.error(err));
@@ -54,10 +55,6 @@ function lyricsSeeker() {
       console.log(err.name);
       await go(url, page, ++count);
     }
-  }
-
-  function convertToFilename(name, tab) {
-    return "./outputs/lyrics/" + name  + ".txt";
   }
 
   return { get };
